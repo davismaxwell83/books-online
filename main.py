@@ -26,11 +26,6 @@ soup = BeautifulSoup(page.content, 'html.parser')
 full_title = soup.title.string
 book_title = full_title.split('\n    ')[1].split(' |')[0]
 
-# table_elements = soup.find_all('td')
-# universal_product_code = table_elements[0]
-# price_including_tax = table_elements[3] # try float(table_elements[3].replace("£","")) if this needs to be numeric
-# price_excluding_tax = table_elements[2] # try float(table_elements[2].replace("£","")) if this needs to be numeric
-# quantity_available = table_elements[5].string.split()[2].strip('(')
 table_elements = soup.find_all('tr')
 table_elements_list = []
 for element in table_elements:
