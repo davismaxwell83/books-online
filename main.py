@@ -1,4 +1,6 @@
 import requests
+import datetime
+import csv
 from bs4 import BeautifulSoup
 
 # Phase 1
@@ -16,13 +18,12 @@ from bs4 import BeautifulSoup
 # ● image_url
 # Write the data to a CSV file using the above fields as column headings.
 
-# Step 1 : Extraction of desired information with Beautiful Soup
+# Phase 1, Step 1 : Extract required information with Beautiful Soup
 product_page_url = "https://books.toscrape.com/catalogue/ready-player-one_209/index.html"
 page = requests.get(product_page_url)
 
 soup = BeautifulSoup(page.content, 'html.parser')
 
-# Extraction of the required information above
 full_title = soup.title.string
 book_title = full_title.split('\n    ')[1].split(' |')[0]
 
@@ -44,19 +45,40 @@ category = soup.find('ul').find_all('li')[2].get_text().strip('\n')
 review_rating = soup.select('p[class*=star-rating]')[0]['class'][1]
 image_url = soup.find('img')['src']
 
+# Save extracted information to lists of strings
+product_page_urls = [product_page_url]
+universal_product_code = [universal_product_code]
+book_titles = [book_title]
+prices_including_tax = [price_including_tax]
+prices_excluding_tax = [price_excluding_tax]
+quantities_available = [quantity_available]
+product_descriptions = [product_description]
+categories = [category]
+review_ratings = [review_rating]
+image_urls = [image_url]
 
-end
-# Write to CSV
-#Create list for the headers
-headers = ["title", "description"]
+# Phase 1, Step 2 : Write data to CSV file
+# Create list for the headers
+headers = ["product_page_url",
+           "universal_product_code",
+           "book_title",
+           "price_including_tax",
+           "price_excluding_tax",
+           "quantity_available",
+           "product_description",
+           "category",
+           "review_rating",
+           "image_url"]
 
-#Open a new file to write to called ‘data.csv’
-with open('data.csv', 'w', newline='') as csvfile:
-    #Create a writer object with that file
+
+# Open a new file to write to and select a name which describes the output (e.g., the item's name, the output type,
+# timestamps)
+with open(book_title + ' - Product Information ' + datetime.datetime.now().strftime('%m.%d.%y %H.%M.%S') + '.csv', 'w', newline='') as csvfile:
+    # Create a writer object with that file
     writer = csv.writer(csvfile, delimiter=',')
     writer.writerow(headers)
-    #Loop through each element in titles and descriptions lists
-    for i in range(len(titles)):
-        #Create a new row with the title and description at that point in the loop
-        row = [titles[i], descriptions[i]]
+    # Loop through each element in extracted information lists
+    for i in range(len(product_page_urls)):
+        # Create a new row with the extracted information at that point in the loop
+        row = [product_page_urls[i], universal_product_code[i], book_titles[i], prices_including_tax[i], prices_excluding_tax[i], quantities_available[i], product_descriptions[i], categories[i], review_ratings[i], image_urls[i]]
         writer.writerow(row)
