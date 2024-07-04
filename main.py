@@ -2,32 +2,50 @@ import requests
 import datetime
 import csv
 from bs4 import BeautifulSoup
-
+import re
 
 # Phase 2
 # Extract the product page URLs for all books in a single category
 def category(category_page_url):
-    page = requests.get(category_page_url)
 
-    soup = BeautifulSoup(page.content, 'html.parser')
-
-    category_name = soup.find('ul').find_all('li')[2].get_text().strip('\n')
-    print("Category of the entered URL:", category_name)
-    category_title_elements = soup.find_all('h3')
+    is_next = 1
+    page_num = 1
     category_book_urls = []
     category_book_titles = []
-    for i in range(len(category_title_elements)):
-        book_url = "https://books.toscrape.com/catalogue/" + category_title_elements[i].find('a')['href'].strip(
-            '../../../')
-        # print(f"URL of book #{i + 1}:", book_url)
-        book_title = category_title_elements[i].find('a')['title']
-        # print(f"Title of book #{i + 1}:", book_title)
-        category_book_urls.append(book_url)
-        category_book_titles.append(book_title)
+    while is_next == 1:
+        page = requests.get(category_page_url)
+
+        soup = BeautifulSoup(page.content, 'html.parser')
+
+        category_name = soup.find('ul').find_all('li')[2].get_text().strip('\n')
+        category_title_elements = soup.find_all('h3')
+
+        for i in range(len(category_title_elements)):
+            book_url = "https://books.toscrape.com/catalogue/" + category_title_elements[i].find('a')['href'].strip(
+                '../../../')
+            # print(f"URL of book #{i + 1}:", book_url)
+            book_title = category_title_elements[i].find('a')['title']
+            # print(f"Title of book #{i + 1}:", book_title)
+            category_book_urls.append(book_url)
+            category_book_titles.append(book_title)
+        is_next = len(soup.select('li[class*=next]'))
+        # If there is a 'next' page, then update the page URL accordingly
+        if is_next == 1:
+            print(category_name + ", " +
+                  soup.select('li[class*=current]')[0].get_text().strip('\n            '))
+            page_num += 1
+            if category_page_url.endswith('index.html'):
+                category_page_url = category_page_url.replace('index.html', 'page-'+str(page_num)+'.html')
+            else:
+                category_page_url = category_page_url.replace('page-'+str(page_num-1)+'.html', 'page-'+str(page_num)+'.html')
+                # page_num = int(re.findall(r'\d+', soup.select('li[class*=next]')[0].find('a')['href'])[0])
+        else:
+            print(category_name + ", Page 1 of 1")
+
     # print("List of book URLS: ", category_book_urls)
     # print("List of book titles: ", category_book_titles)
     category_books = {"product_page_url": category_book_urls, "book_title": category_book_titles}
-    print("Dictionary of book URLS and titles: ", category_books)
+    # print("Dictionary of book URLS and titles: ", category_books)
     return category_books
 
 
@@ -68,7 +86,11 @@ def product(product_page_url):
             case 'Availability':
                 quantity_available = element.find('td').get_text().split()[2].strip('(')
         # table_elements_list.append(price_including_tax)
-    product_description = soup.find('h2', string=lambda s: 'Product Description' in s).find_next('p').string.replace('…', '...').replace(' ', '')
+    if soup.find('h2', string=lambda s: 'Product Description' in s) is None:
+        product_description = ''
+    else:
+       product_description = soup.find('h2', string=lambda s: 'Product Description' in s).find_next('p').string.replace(
+        '…', '...').replace(' ', '').replace(u"\u203D", '')
     category = soup.find('ul').find_all('li')[2].get_text().strip('\n')
     review_rating = soup.select('p[class*=star-rating]')[0]['class'][1]
     image_url = soup.find('img')['src']
@@ -111,7 +133,7 @@ def load(data_to_load):
     # Open a new file to write to and select a name which describes the output (e.g., name, output type, timestamps)
     # with open(category + ' - Product Information ' + datetime.datetime.now().strftime('%m.%d.%y %H.%M.%S') + '.csv',
     #           'w', newline='') as csvfile:
-    with open('output.csv', mode='w', newline='') as file:
+    with open('output.csv', mode='w', newline='', encoding='utf-8') as file:
         # Create a writer object with that file
         writer = csv.DictWriter(file, fieldnames=headers)
         writer.writeheader()
@@ -131,8 +153,8 @@ def main():
     data_to_load = []
     for i in range(len(category_books['product_page_url'])):
         product_page_url = category_books['product_page_url'][i]
-        print(f"URL of book #{i + 1}:", product_page_url)
-        print(f"Title of book #{i + 1}:", category_books['book_title'][i])
+        # print(f"URL of book #{i + 1}:", product_page_url)
+        # print(f"Title of book #{i + 1}:", category_books['book_title'][i])
         product_info = product(product_page_url)
         data_to_load.append(product_info)
     load(data_to_load)
