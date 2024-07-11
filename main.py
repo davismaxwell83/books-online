@@ -4,8 +4,31 @@ import csv
 from bs4 import BeautifulSoup
 import re
 
+# Phase 3
+# Visit the Books to Scrape home page and extract the links to all the available book categories.
+def home_page():
+    page = requests.get('https://books.toscrape.com/index.html')
+
+    soup = BeautifulSoup(page.content, 'html.parser')
+
+    category_urls = []
+    category_names = []
+    category_elements = soup.select('a[href*=category]')
+
+    # Skip 1st element, which corresponds to "Books" category header, not an individual category
+    for i in range(1,
+                   len(category_elements)):
+        category_url = "https://books.toscrape.com/" + category_elements[i]['href']
+        category_name = category_elements[i].get_text().strip('\n            ')
+        category_urls.append(category_url)
+        category_names.append(category_name)
+
+    categories = {"category_url": category_urls, "category_name": category_names}
+    # print("Dictionary of category URLS and names: ", categories)
+    return categories
+
 # Phase 2
-# Extract the product page URLs for all books in a single category
+# Extract the product page URLs for all books in a single category.
 def category(category_page_url):
 
     is_next = 1
@@ -39,8 +62,11 @@ def category(category_page_url):
             else:
                 category_page_url = category_page_url.replace('page-'+str(page_num-1)+'.html', 'page-'+str(page_num)+'.html')
                 # page_num = int(re.findall(r'\d+', soup.select('li[class*=next]')[0].find('a')['href'])[0])
-        else:
+        elif page_num == 1:
             print(category_name + ", Page 1 of 1")
+        elif page_num > 1:
+            print(category_name + ", " +
+                  soup.select('li[class*=current]')[0].get_text().strip('\n            '))
 
     # print("List of book URLS: ", category_book_urls)
     # print("List of book titles: ", category_book_titles)
@@ -117,7 +143,7 @@ def product(product_page_url):
     return product_info
 
 
-def load(data_to_load):
+def load(data_to_load, category_name):
     # Create list for the headers
     headers = ["product_page_url",
                "universal_product_code",
@@ -129,11 +155,7 @@ def load(data_to_load):
                "category",
                "review_rating",
                "image_url"]
-
-    # Open a new file to write to and select a name which describes the output (e.g., name, output type, timestamps)
-    # with open(category + ' - Product Information ' + datetime.datetime.now().strftime('%m.%d.%y %H.%M.%S') + '.csv',
-    #           'w', newline='') as csvfile:
-    with open('output.csv', mode='w', newline='', encoding='utf-8') as file:
+    with open(category_name + '.csv', mode='w', newline='', encoding='utf-8') as file:
         # Create a writer object with that file
         writer = csv.DictWriter(file, fieldnames=headers)
         writer.writeheader()
@@ -147,18 +169,24 @@ def main():
     #
     # product(product_page_url)
 
-    category_page_url = input(
-        "Enter the URL for a single category: ")  # "https://books.toscrape.com/catalogue/category/books/science-fiction_16/index.html"
-    category_books = category(category_page_url)
-    data_to_load = []
-    for i in range(len(category_books['product_page_url'])):
-        product_page_url = category_books['product_page_url'][i]
-        # print(f"URL of book #{i + 1}:", product_page_url)
-        # print(f"Title of book #{i + 1}:", category_books['book_title'][i])
-        product_info = product(product_page_url)
-        data_to_load.append(product_info)
-    load(data_to_load)
-
+    # category_page_url = input(
+    #     "Enter the URL for a single category: ")  # "https://books.toscrape.com/catalogue/category/books/science-fiction_16/index.html"
+    # print("Now extracting product information from:")
+    print("Visiting the Books to Scrape homepage and extracting all available book categories.")
+    categories = home_page()
+    for h in range(len(categories['category_url'])):
+        category_url = categories['category_url'][h]
+        category_name = categories['category_name'][h]
+        category_books = category(category_url)
+        data_to_load = []
+        for i in range(len(category_books['product_page_url'])):
+            product_page_url = category_books['product_page_url'][i]
+            # print(f"URL of book #{i + 1}:", product_page_url)
+            # print(f"Title of book #{i + 1}:", category_books['book_title'][i])
+            product_info = product(product_page_url)
+            data_to_load.append(product_info)
+        load(data_to_load, category_name)
+        print("Extracted product information has now been written to a CSV file.")
 
 if __name__ == "__main__":
     main()
