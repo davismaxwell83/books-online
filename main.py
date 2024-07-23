@@ -2,6 +2,7 @@ import requests
 import datetime
 import csv
 from bs4 import BeautifulSoup
+import os
 import re
 
 # Phase 3
@@ -121,6 +122,23 @@ def product(product_page_url):
     review_rating = soup.select('p[class*=star-rating]')[0]['class'][1]
     image_url = soup.find('img')['src']
 
+    # Download image from image_url and save to Images folder
+    image = requests.get("https://books.toscrape.com/" + image_url.strip('../../')).content
+    path = './Images/' + category
+    # Check whether directory already exists
+    if not os.path.exists(path):
+        os.mkdir(path)
+        # print("Folder %s created!" % path)
+    # else:
+        # print("Folder %s already exists" % path)
+
+    # Remove special characters from book title before saving image under book title
+    clean_book_title = re.sub('[^A-Za-z0-9 ]+', '', book_title)
+    # Shorten the (clean) book title to fit within maximum path limit of ~256 characters for Microsoft Windows
+    max_title_length = 241 - len(os.path.dirname(os.path.realpath(path)) + '\\' + universal_product_code + ' - ' + '.jpg')
+    with open(path + '/' + universal_product_code + ' - ' + clean_book_title[:max_title_length] + '.jpg', 'wb') as handler:
+        handler.write(image)
+
     # Save extracted information to lists of strings
     # product_page_urls = [product_page_url]
     # universal_product_code = [universal_product_code]
@@ -174,6 +192,15 @@ def main():
     # print("Now extracting product information from:")
     print("Visiting the Books to Scrape homepage and extracting all available book categories.")
     categories = home_page()
+
+    path = './Images'
+    # Check whether directory already exists
+    if not os.path.exists(path):
+        os.mkdir(path)
+        print("Folder %s created!" % path)
+    else:
+        print("Folder %s already exists" % path)
+
     for h in range(len(categories['category_url'])):
         category_url = categories['category_url'][h]
         category_name = categories['category_name'][h]
@@ -186,7 +213,7 @@ def main():
             product_info = product(product_page_url)
             data_to_load.append(product_info)
         load(data_to_load, category_name)
-        print("Extracted product information has now been written to a CSV file.")
+        print("Extracted product information and images for the " + category_name + " category have been saved.")
 
 if __name__ == "__main__":
     main()
