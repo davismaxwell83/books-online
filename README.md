@@ -8,7 +8,7 @@ the important product information, including prices, as well as an image of each
 Please follow the below steps in order to run the program:
 
 ● Clone this repository to a folder of your choosing\
-● Open the terminal and navigate to your project folder\
+● Open your terminal, if you haven't already, and navigate to the cloned repo\
 ● Create a virtual environment using the following command:\
 _py -m venv env (Windows and macOS)_\
 ● Activate the virtual environment using the following command:\
