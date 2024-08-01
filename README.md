@@ -15,7 +15,7 @@ _py -m venv env (Windows and macOS)_\
 _env\Scripts\activate.bat (Windows), or\
 env/bin/activate (macOS)_\
 ● Install the Python libraries documented in the requirements.txt file:\
-_pip install -r requirement.txt (Windows and macOS)_\
+_pip install -r requirements.txt (Windows and macOS)_\
 ● Finally, run main.py using the following command:\
 _py main.py_
 
